@@ -54,3 +54,10 @@ htmlcov/
 # Distribution
 *.tar.gz
 *.whl
+
+# Gemini/Claude Code
+operations_ai_system/.gemini/
+operations_ai_system/.geminiignore
+operations_ai_system/GEMINI.md
+operations_ai_system/skills/
+operations_ai_system/dist/
