@@ -40,6 +40,9 @@ CLAUDE.md
 # Data (keep tracked via Git LFS or explicit includes)
 # *.xlsx  — we track the data file for reproducibility
 
+# Generated reports
+**/reports/
+
 # Logs
 *.log
 
