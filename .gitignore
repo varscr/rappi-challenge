@@ -32,7 +32,7 @@ Thumbs.db
 CLAUDE.md
 
 # Challenge briefs and reference docs (not part of deliverable)
-docs/briefs/
+**/docs/briefs/
 
 # Jupyter
 .ipynb_checkpoints/
