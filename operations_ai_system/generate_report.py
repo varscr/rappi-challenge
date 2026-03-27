@@ -30,7 +30,7 @@ def detect_anomalies(df: pd.DataFrame, week_labels: list[str], threshold: float 
     anomalies = result[result["abs_change"] > threshold].copy()
     anomalies = anomalies.sort_values("abs_change", ascending=False)
     anomalies["direction"] = anomalies["wow_change"].apply(
-        lambda x: "improvement" if x > 0 else "deterioration"
+        lambda x: "mejora" if x > 0 else "deterioro"
     )
     anomalies["wow_change_pct"] = (anomalies["wow_change"] * 100).round(2)
     return anomalies.drop(columns=["abs_change"])
@@ -138,9 +138,9 @@ def compute_correlations(df: pd.DataFrame, week_labels: list[str], top_n: int = 
                     "metric_2": m2,
                     "correlation": round(val, 4),
                     "strength": (
-                        "strong" if abs(val) > 0.7
-                        else "moderate" if abs(val) > 0.4
-                        else "weak"
+                        "fuerte" if abs(val) > 0.7
+                        else "moderada" if abs(val) > 0.4
+                        else "débil"
                     ),
                 })
 
@@ -156,11 +156,11 @@ def compute_correlations(df: pd.DataFrame, week_labels: list[str], top_n: int = 
 # ── Report Generation ───────────────────────────────────────────
 
 REPORT_TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rappi Operations — Executive Insights Report</title>
+    <title>Rappi Operations — Reporte Ejecutivo de Insights</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; color: #333; max-width: 1200px; margin: 0 auto; padding: 40px; }
         h1 { color: #ff441f; border-bottom: 3px solid #ff441f; padding-bottom: 10px; }
@@ -168,10 +168,6 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
         h3 { color: #555; }
         .summary { background: #f8f9fa; border-left: 4px solid #ff441f; padding: 20px; margin: 20px 0; border-radius: 4px; }
         .insight { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 12px 0; }
-        .insight.deterioration { border-left: 4px solid #e74c3c; }
-        .insight.improvement { border-left: 4px solid #27ae60; }
-        .insight.warning { border-left: 4px solid #f39c12; }
-        .insight.info { border-left: 4px solid #3498db; }
         table { border-collapse: collapse; width: 100%; margin: 16px 0; }
         th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
         th { background: #f5f5f5; font-weight: 600; }
@@ -182,24 +178,24 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <h1>📊 Rappi Operations — Executive Insights Report</h1>
-    <p class="timestamp">Generated: {{ generated_at }}</p>
+    <h1>📊 Rappi Operations — Reporte Ejecutivo de Insights</h1>
+    <p class="timestamp">Generado: {{ generated_at }}</p>
 
     <div class="summary">
-        <h2>Executive Summary</h2>
+        <h2>Resumen Ejecutivo</h2>
         <ul>
-            <li><strong>{{ anomaly_count }}</strong> anomalies detected (>10% week-over-week change)</li>
-            <li><strong>{{ trend_count }}</strong> metrics showing concerning downward trends (3+ weeks)</li>
-            <li><strong>{{ underperformer_count }}</strong> zones significantly underperforming their peer group</li>
-            <li><strong>{{ strong_corr_count }}</strong> strong metric correlations identified</li>
+            <li><strong>{{ anomaly_count }}</strong> anomalías detectadas (>10% de cambio semana a semana)</li>
+            <li><strong>{{ trend_count }}</strong> métricas mostrando tendencias de deterioro preocupantes (3+ semanas)</li>
+            <li><strong>{{ underperformer_count }}</strong> zonas con desempeño significativamente inferior a su grupo</li>
+            <li><strong>{{ strong_corr_count }}</strong> correlaciones fuertes identificadas entre métricas</li>
         </ul>
     </div>
 
-    <h2>1. Anomalies — Drastic Week-over-Week Changes</h2>
-    <p>Zones with >10% change from last week ({{ prev_week }} to {{ current_week }}). Sorted by magnitude.</p>
+    <h2>1. Anomalías — Cambios Drásticos Semana a Semana</h2>
+    <p>Zonas con >10% de cambio respecto a la semana pasada ({{ prev_week }} a {{ current_week }}). Ordenado por magnitud.</p>
     {% if anomalies %}
     <table>
-        <tr><th>Country</th><th>Zone</th><th>Metric</th><th>Change</th><th>Direction</th></tr>
+        <tr><th>País</th><th>Zona</th><th>Métrica</th><th>Cambio</th><th>Dirección</th></tr>
         {% for row in anomalies[:20] %}
         <tr>
             <td>{{ row.COUNTRY }}</td>
@@ -211,17 +207,17 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
         {% endfor %}
     </table>
     {% if anomalies|length > 20 %}
-    <p><em>... and {{ anomalies|length - 20 }} more anomalies.</em></p>
+    <p><em>... y {{ anomalies|length - 20 }} anomalías más.</em></p>
     {% endif %}
     {% else %}
-    <p>No significant anomalies detected.</p>
+    <p>No se detectaron anomalías significativas.</p>
     {% endif %}
 
-    <h2>2. Concerning Trends — Consistent Deterioration</h2>
-    <p>Metrics declining for 3+ consecutive weeks.</p>
+    <h2>2. Tendencias Preocupantes — Deterioro Consistente</h2>
+    <p>Métricas disminuyendo durante 3+ semanas consecutivas.</p>
     {% if trends %}
     <table>
-        <tr><th>Country</th><th>Zone</th><th>Metric</th><th>Weeks Declining</th><th>Total Decline</th></tr>
+        <tr><th>País</th><th>Zona</th><th>Métrica</th><th>Semanas en Descenso</th><th>Descenso Total</th></tr>
         {% for row in trends[:20] %}
         <tr>
             <td>{{ row.COUNTRY }}</td>
@@ -233,14 +229,14 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
         {% endfor %}
     </table>
     {% else %}
-    <p>No concerning trends detected.</p>
+    <p>No se detectaron tendencias preocupantes.</p>
     {% endif %}
 
-    <h2>3. Benchmarking — Underperforming Zones</h2>
-    <p>Zones performing >1 standard deviation below their country+zone_type peer group ({{ current_week }}).</p>
+    <h2>3. Benchmarking — Zonas con Bajo Desempeño</h2>
+    <p>Zonas con desempeño >1 desviación estándar por debajo de su grupo de pares por país y tipo de zona ({{ current_week }}).</p>
     {% if underperformers %}
     <table>
-        <tr><th>Country</th><th>Zone</th><th>Type</th><th>Metric</th><th>Value</th><th>Group Avg</th><th>Z-Score</th></tr>
+        <tr><th>País</th><th>Zona</th><th>Tipo</th><th>Métrica</th><th>Valor</th><th>Promedio Grupo</th><th>Z-Score</th></tr>
         {% for row in underperformers[:20] %}
         <tr>
             <td>{{ row.COUNTRY }}</td>
@@ -254,14 +250,14 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
         {% endfor %}
     </table>
     {% else %}
-    <p>No significant underperformers detected.</p>
+    <p>No se detectaron zonas con bajo desempeño significativo.</p>
     {% endif %}
 
-    <h2>4. Metric Correlations</h2>
-    <p>Strongest relationships between operational metrics ({{ current_week }}).</p>
+    <h2>4. Correlaciones de Métricas</h2>
+    <p>Relaciones más fuertes entre métricas operacionales ({{ current_week }}).</p>
     {% if correlations %}
     <table>
-        <tr><th>Metric 1</th><th>Metric 2</th><th>Correlation</th><th>Strength</th></tr>
+        <tr><th>Métrica 1</th><th>Métrica 2</th><th>Correlación</th><th>Fuerza</th></tr>
         {% for row in correlations %}
         <tr>
             <td><span class="metric-tag">{{ row.metric_1 }}</span></td>
@@ -272,10 +268,10 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
         {% endfor %}
     </table>
     {% else %}
-    <p>Not enough data for correlation analysis.</p>
+    <p>No hay datos suficientes para el análisis de correlación.</p>
     {% endif %}
 
-    <h2>5. Recommendations</h2>
+    <h2>5. Recomendaciones</h2>
     <div class="recommendation">
         <ul>
         {% for rec in recommendations %}
@@ -297,32 +293,32 @@ def generate_recommendations(
     recs = []
 
     if not anomalies.empty:
-        worst = anomalies[anomalies["direction"] == "deterioration"]
+        worst = anomalies[anomalies["direction"] == "deterioro"]
         if not worst.empty:
             top = worst.iloc[0]
             recs.append(
-                f"Investigate {top['ZONE']} ({top['COUNTRY']}) — "
-                f"{top['METRIC']} dropped {abs(top['wow_change_pct'])}% this week."
+                f"Investigar {top['ZONE']} ({top['COUNTRY']}) — "
+                f"{top['METRIC']} cayó un {abs(top['wow_change_pct'])}% esta semana."
             )
 
     if not trends.empty:
         top_trend = trends.iloc[0]
         recs.append(
-            f"Urgent attention needed: {top_trend['ZONE']} ({top_trend['COUNTRY']}) — "
-            f"{top_trend['METRIC']} has declined for {top_trend['consecutive_decline_weeks']} "
-            f"consecutive weeks ({top_trend['total_decline_pct']}% total)."
+            f"Atención urgente necesaria: {top_trend['ZONE']} ({top_trend['COUNTRY']}) — "
+            f"{top_trend['METRIC']} ha disminuido durante {top_trend['consecutive_decline_weeks']} "
+            f"semanas consecutivas ({top_trend['total_decline_pct']}% total)."
         )
 
     if not underperformers.empty:
         worst_z = underperformers.iloc[0]
         recs.append(
-            f"Benchmark gap: {worst_z['ZONE']} ({worst_z['COUNTRY']}) is significantly "
-            f"underperforming peers on {worst_z['METRIC']} "
+            f"Brecha de benchmark: {worst_z['ZONE']} ({worst_z['COUNTRY']}) tiene un desempeño "
+            f"significativamente inferior a sus pares en {worst_z['METRIC']} "
             f"(z-score: {worst_z['z_score']})."
         )
 
     if not recs:
-        recs.append("All metrics are within normal ranges. Continue monitoring.")
+        recs.append("Todas las métricas están dentro de los rangos normales. Continuar monitoreando.")
 
     return recs
 
@@ -349,7 +345,7 @@ def generate_report(output_path: Path | None = None) -> Path:
         anomaly_count=len(anomalies),
         trend_count=len(trends),
         underperformer_count=len(underperformers),
-        strong_corr_count=len(correlations[correlations["strength"] == "strong"])
+        strong_corr_count=len(correlations[correlations["strength"] == "fuerte"])
         if not correlations.empty else 0,
         anomalies=anomalies.to_dict("records") if not anomalies.empty else [],
         trends=trends.to_dict("records") if not trends.empty else [],
@@ -360,7 +356,7 @@ def generate_report(output_path: Path | None = None) -> Path:
 
     if output_path is None:
         OUTPUT_DIR.mkdir(exist_ok=True)
-        output_path = OUTPUT_DIR / f"insights_report_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
+        output_path = OUTPUT_DIR / f"reporte_insights_{datetime.now().strftime('%Y%m%d_%H%M')}.html"
 
     output_path.write_text(html)
     print(f"Report generated: {output_path}")
