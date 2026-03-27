@@ -168,7 +168,7 @@ class QueryEngine:
     def _execute_compare(self, intent: dict) -> QueryResult:
         """Compare metric grouped by zone_type or country."""
         metric = intent["metric"]
-        group_by = intent.get("group_by", "zone_type")
+        group_by = str(intent.get("group_by", "zone_type")).lower()
 
         df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
         df = self._apply_filters(df, intent)
@@ -219,7 +219,7 @@ class QueryEngine:
     def _execute_aggregate(self, intent: dict) -> QueryResult:
         """Metric average/median grouped by country or zone_type."""
         metric = intent["metric"]
-        group_by = intent.get("group_by", "country")
+        group_by = str(intent.get("group_by", "country")).lower()
 
         df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
         df = self._apply_filters(df, intent)
