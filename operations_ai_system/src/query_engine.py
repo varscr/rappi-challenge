@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import pandas as pd
 
 from src.data_loader import (
-    WEEK_LABELS,
     get_schema_summary,
     get_valid_metrics,
 )
@@ -37,12 +36,16 @@ class QueryEngine:
         llm: LLMClient,
         df_metrics: pd.DataFrame,
         df_orders: pd.DataFrame,
+        week_labels: list[str],
     ) -> None:
         self.llm = llm
         self.df_metrics = df_metrics
         self.df_orders = df_orders
+        self.week_labels = week_labels
+        self.current_week = week_labels[-1] if week_labels else "L0W"
+        
         self.valid_metrics = get_valid_metrics(df_metrics)
-        self.schema_context = get_schema_summary(df_metrics, df_orders)
+        self.schema_context = get_schema_summary(df_metrics, df_orders, week_labels)
 
         self._executors = {
             "filter_rank": self._execute_filter_rank,
@@ -93,7 +96,7 @@ class QueryEngine:
             intent["metric"] = [self._fuzzy_match_metric(m) for m in metric]
 
         if "weeks" not in intent or intent["weeks"] is None:
-            intent["weeks"] = 8
+            intent["weeks"] = len(self.week_labels)
         if "sort_order" not in intent or intent["sort_order"] is None:
             intent["sort_order"] = "desc"
 
@@ -139,8 +142,7 @@ class QueryEngine:
 
     def _week_columns(self, weeks: int) -> list[str]:
         """Return the last N week column names."""
-        all_weeks = WEEK_LABELS  # L8W, L7W, ..., L0W
-        return all_weeks[-weeks:]
+        return self.week_labels[-weeks:]
 
     def _execute_filter_rank(self, intent: dict) -> QueryResult:
         """Top/bottom N zones by a metric."""
@@ -151,9 +153,9 @@ class QueryEngine:
         df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
         df = self._apply_filters(df, intent)
 
-        df = df.sort_values("L0W", ascending=ascending).head(top_n)
-        result = df[["COUNTRY", "CITY", "ZONE", "ZONE_TYPE", "L0W"]].copy()
-        result = result.rename(columns={"L0W": metric})
+        df = df.sort_values(self.current_week, ascending=ascending).head(top_n)
+        result = df[["COUNTRY", "CITY", "ZONE", "ZONE_TYPE", self.current_week]].copy()
+        result = result.rename(columns={self.current_week: metric})
 
         return QueryResult(
             df=result,
@@ -172,8 +174,8 @@ class QueryEngine:
         df = self._apply_filters(df, intent)
 
         group_col = "ZONE_TYPE" if group_by == "zone_type" else "COUNTRY"
-        result = df.groupby(group_col)["L0W"].mean().reset_index()
-        result = result.rename(columns={"L0W": metric})
+        result = df.groupby(group_col)[self.current_week].mean().reset_index()
+        result = result.rename(columns={self.current_week: metric})
         result = result.sort_values(metric, ascending=False)
 
         return QueryResult(
@@ -187,7 +189,7 @@ class QueryEngine:
     def _execute_trend(self, intent: dict) -> QueryResult:
         """Metric evolution over weeks for a specific zone."""
         metric = intent["metric"]
-        weeks = intent.get("weeks", 8)
+        weeks = intent.get("weeks", len(self.week_labels))
         week_cols = self._week_columns(weeks)
 
         df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
@@ -223,7 +225,7 @@ class QueryEngine:
         df = self._apply_filters(df, intent)
 
         group_col = "COUNTRY" if group_by == "country" else "ZONE_TYPE"
-        result = df.groupby(group_col)["L0W"].agg(["mean", "median", "count"]).reset_index()
+        result = df.groupby(group_col)[self.current_week].agg(["mean", "median", "count"]).reset_index()
         result = result.rename(columns={"mean": f"{metric} (avg)", "median": f"{metric} (median)"})
         result = result.sort_values(f"{metric} (avg)", ascending=False)
 
@@ -254,7 +256,7 @@ class QueryEngine:
         pivot = df.pivot_table(
             index=["COUNTRY", "CITY", "ZONE"],
             columns="METRIC",
-            values="L0W",
+            values=self.current_week,
         ).reset_index()
 
         if metric_a not in pivot.columns or metric_b not in pivot.columns:

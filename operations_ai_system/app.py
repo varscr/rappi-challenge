@@ -28,9 +28,9 @@ def load_data():
 def get_engine() -> QueryEngine:
     """Get or create the query engine (persisted in session state)."""
     if "engine" not in st.session_state:
-        df_metrics, df_orders = load_data()
+        df_metrics, df_orders, week_labels = load_data()
         llm = LLMClient()
-        st.session_state.engine = QueryEngine(llm, df_metrics, df_orders)
+        st.session_state.engine = QueryEngine(llm, df_metrics, df_orders, week_labels)
     return st.session_state.engine
 
 

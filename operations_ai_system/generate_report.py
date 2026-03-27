@@ -6,20 +6,26 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Template
 
-from src.data_loader import WEEK_LABELS, load_all
+from src.data_loader import load_all
 
 OUTPUT_DIR = Path(__file__).parent / "reports"
 
 # ── Insight Detectors ───────────────────────────────────────────
 
 
-def detect_anomalies(df: pd.DataFrame, threshold: float = 0.10) -> pd.DataFrame:
+def detect_anomalies(df: pd.DataFrame, week_labels: list[str], threshold: float = 0.10) -> pd.DataFrame:
     """Flag zones with drastic week-over-week changes (>threshold).
 
     Uses abs((L0W - L1W) / L1W) > threshold.
     """
-    result = df[["COUNTRY", "CITY", "ZONE", "METRIC", "L1W", "L0W"]].copy()
-    result["wow_change"] = (result["L0W"] - result["L1W"]) / result["L1W"].replace(0, float("nan"))
+    if len(week_labels) < 2:
+        return pd.DataFrame()
+        
+    current_week = week_labels[-1]
+    prev_week = week_labels[-2]
+    
+    result = df[["COUNTRY", "CITY", "ZONE", "METRIC", prev_week, current_week]].copy()
+    result["wow_change"] = (result[current_week] - result[prev_week]) / result[prev_week].replace(0, float("nan"))
     result["abs_change"] = result["wow_change"].abs()
     anomalies = result[result["abs_change"] > threshold].copy()
     anomalies = anomalies.sort_values("abs_change", ascending=False)
@@ -30,13 +36,12 @@ def detect_anomalies(df: pd.DataFrame, threshold: float = 0.10) -> pd.DataFrame:
     return anomalies.drop(columns=["abs_change"])
 
 
-def detect_concerning_trends(df: pd.DataFrame, consecutive_weeks: int = 3) -> pd.DataFrame:
+def detect_concerning_trends(df: pd.DataFrame, week_labels: list[str], consecutive_weeks: int = 3) -> pd.DataFrame:
     """Flag metrics decreasing for N+ consecutive weeks."""
-    week_cols = WEEK_LABELS  # L8W..L0W (oldest to newest)
     results = []
 
     for _, row in df.iterrows():
-        values = [row[col] for col in week_cols if pd.notna(row[col])]
+        values = [row[col] for col in week_labels if pd.notna(row[col])]
         if len(values) < consecutive_weeks + 1:
             continue
 
@@ -66,19 +71,23 @@ def detect_concerning_trends(df: pd.DataFrame, consecutive_weeks: int = 3) -> pd
     ) if results else pd.DataFrame()
 
 
-def benchmark_zones(df: pd.DataFrame) -> pd.DataFrame:
+def benchmark_zones(df: pd.DataFrame, week_labels: list[str]) -> pd.DataFrame:
     """Flag zones performing >1 std below their COUNTRY+ZONE_TYPE group mean."""
+    if not week_labels:
+        return pd.DataFrame()
+        
+    current_week = week_labels[-1]
     results = []
 
     for (country, zone_type, metric), group in df.groupby(
         ["COUNTRY", "ZONE_TYPE", "METRIC"]
     ):
-        mean = group["L0W"].mean()
-        std = group["L0W"].std()
+        mean = group[current_week].mean()
+        std = group[current_week].std()
         if pd.isna(std) or std == 0:
             continue
 
-        underperformers = group[group["L0W"] < (mean - std)]
+        underperformers = group[group[current_week] < (mean - std)]
         for _, row in underperformers.iterrows():
             results.append({
                 "COUNTRY": country,
@@ -86,21 +95,25 @@ def benchmark_zones(df: pd.DataFrame) -> pd.DataFrame:
                 "CITY": row["CITY"],
                 "ZONE": row["ZONE"],
                 "METRIC": metric,
-                "zone_value": round(row["L0W"], 4),
+                "zone_value": round(row[current_week], 4),
                 "group_mean": round(mean, 4),
                 "group_std": round(std, 4),
-                "z_score": round((row["L0W"] - mean) / std, 2),
+                "z_score": round((row[current_week] - mean) / std, 2),
             })
 
     return pd.DataFrame(results).sort_values("z_score") if results else pd.DataFrame()
 
 
-def compute_correlations(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
+def compute_correlations(df: pd.DataFrame, week_labels: list[str], top_n: int = 10) -> pd.DataFrame:
     """Compute pearson correlations between metrics across zones."""
+    if not week_labels:
+        return pd.DataFrame()
+        
+    current_week = week_labels[-1]
     pivot = df.pivot_table(
         index=["COUNTRY", "CITY", "ZONE"],
         columns="METRIC",
-        values="L0W",
+        values=current_week,
     )
 
     if pivot.shape[1] < 2:
@@ -132,6 +145,9 @@ def compute_correlations(df: pd.DataFrame, top_n: int = 10) -> pd.DataFrame:
                 })
 
     result = pd.DataFrame(pairs)
+    if result.empty:
+        return pd.DataFrame()
+        
     result["abs_corr"] = result["correlation"].abs()
     result = result.sort_values("abs_corr", ascending=False).head(top_n)
     return result.drop(columns=["abs_corr"])
@@ -180,7 +196,7 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <h2>1. Anomalies — Drastic Week-over-Week Changes</h2>
-    <p>Zones with >10% change from last week. Sorted by magnitude.</p>
+    <p>Zones with >10% change from last week ({{ prev_week }} to {{ current_week }}). Sorted by magnitude.</p>
     {% if anomalies %}
     <table>
         <tr><th>Country</th><th>Zone</th><th>Metric</th><th>Change</th><th>Direction</th></tr>
@@ -221,7 +237,7 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     {% endif %}
 
     <h2>3. Benchmarking — Underperforming Zones</h2>
-    <p>Zones performing >1 standard deviation below their country+zone_type peer group.</p>
+    <p>Zones performing >1 standard deviation below their country+zone_type peer group ({{ current_week }}).</p>
     {% if underperformers %}
     <table>
         <tr><th>Country</th><th>Zone</th><th>Type</th><th>Metric</th><th>Value</th><th>Group Avg</th><th>Z-Score</th></tr>
@@ -242,7 +258,7 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     {% endif %}
 
     <h2>4. Metric Correlations</h2>
-    <p>Strongest relationships between operational metrics.</p>
+    <p>Strongest relationships between operational metrics ({{ current_week }}).</p>
     {% if correlations %}
     <table>
         <tr><th>Metric 1</th><th>Metric 2</th><th>Correlation</th><th>Strength</th></tr>
@@ -317,17 +333,19 @@ def generate_report(output_path: Path | None = None) -> Path:
     Returns:
         Path to the generated HTML report.
     """
-    df_metrics, _ = load_all()
+    df_metrics, _, week_labels = load_all()
 
-    anomalies = detect_anomalies(df_metrics)
-    trends = detect_concerning_trends(df_metrics)
-    underperformers = benchmark_zones(df_metrics)
-    correlations = compute_correlations(df_metrics)
+    anomalies = detect_anomalies(df_metrics, week_labels)
+    trends = detect_concerning_trends(df_metrics, week_labels)
+    underperformers = benchmark_zones(df_metrics, week_labels)
+    correlations = compute_correlations(df_metrics, week_labels)
     recommendations = generate_recommendations(anomalies, trends, underperformers)
 
     template = Template(REPORT_TEMPLATE)
     html = template.render(
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        current_week=week_labels[-1] if week_labels else "N/A",
+        prev_week=week_labels[-2] if len(week_labels) > 1 else "N/A",
         anomaly_count=len(anomalies),
         trend_count=len(trends),
         underperformer_count=len(underperformers),
