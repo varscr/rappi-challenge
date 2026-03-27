@@ -53,6 +53,16 @@ def load_orders(path: Path = DATA_PATH) -> pd.DataFrame:
     return df
 
 
+def load_summary(path: Path = DATA_PATH) -> pd.DataFrame:
+    """Load RAW_SUMMARY sheet (data dictionary).
+
+    Returns:
+        DataFrame with columns: Column, Type, Examples, Description (inferred).
+    """
+    df = pd.read_excel(path, sheet_name="RAW_SUMMARY")
+    return df.dropna(subset=["Column"])
+
+
 def load_all(path: Path = DATA_PATH) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load both datasets, normalized.
 
@@ -90,6 +100,8 @@ def get_valid_zone_types(df_metrics: pd.DataFrame) -> list[str]:
 def get_schema_summary(df_metrics: pd.DataFrame, df_orders: pd.DataFrame) -> str:
     """Generate a text summary of the data schema for LLM context injection.
 
+    Includes column descriptions from RAW_SUMMARY when available.
+
     Returns:
         Human-readable string describing available columns, metrics,
         countries, zone types, and row counts.
@@ -98,6 +110,17 @@ def get_schema_summary(df_metrics: pd.DataFrame, df_orders: pd.DataFrame) -> str
     countries = get_valid_countries(df_metrics)
     zone_types = get_valid_zone_types(df_metrics)
     cities = get_valid_cities(df_metrics)
+
+    # Load data dictionary for column descriptions
+    try:
+        df_summary = load_summary()
+        col_descriptions = "\n".join(
+            f"- {row['Column']}: {row['Description (inferred)']}"
+            for _, row in df_summary.iterrows()
+        )
+        dict_section = f"\n\n## Column Dictionary\n{col_descriptions}"
+    except Exception:
+        dict_section = ""
 
     return (
         f"## Dataset: RAW_INPUT_METRICS ({len(df_metrics):,} rows)\n"
@@ -109,4 +132,5 @@ def get_schema_summary(df_metrics: pd.DataFrame, df_orders: pd.DataFrame) -> str
         f"## Dataset: RAW_ORDERS ({len(df_orders):,} rows)\n"
         f"Columns: COUNTRY, CITY, ZONE, METRIC (always 'Orders'), L8W..L0W\n"
         f"Values are raw order counts (not ratios)."
+        f"{dict_section}"
     )
