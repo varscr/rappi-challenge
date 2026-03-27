@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Challenge briefs and reference docs (not part of deliverable)
+docs/briefs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (keep tracked via Git LFS or explicit includes)
+# *.xlsx  — we track the data file for reproducibility
+
+# Logs
+*.log
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# Distribution
+*.tar.gz
+*.whl
