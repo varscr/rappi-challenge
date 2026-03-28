@@ -66,12 +66,12 @@ python generate_report.py
 ## 🚀 Bonus Features
 
 ### 📧 Automatic Email Reporting
-The system includes a built-in email delivery system. 
-- **Demo Mode**: If no SMTP credentials are provided, the system simulates the email sending process (perfect for live presentations).
-- **Production Mode**: Configure `SMTP_SERVER`, `SMTP_USER`, and `SMTP_PASSWORD` in your environment to send real HTML reports to stakeholders directly from the UI.
+The system includes a built-in email delivery system via the **Resend API**. 
+- **Demo Mode**: If no `RESEND_API_KEY` is provided, the system simulates the email sending process (perfect for live presentations).
+- **Production Mode**: Get a free API key at [Resend.com](https://resend.com) and add `RESEND_API_KEY` to your environment to send real HTML reports to stakeholders directly from the UI.
 
 ### 📊 Cloud-Ready Deployment
-The app is fully optimized for **Streamlit Community Cloud**. It automatically detects the environment and uses `st.secrets` for API keys and SMTP configuration.
+The app is fully optimized for **Streamlit Community Cloud**. It automatically detects the environment and uses `st.secrets` for API keys.
 
 ---
 
@@ -79,16 +79,11 @@ The app is fully optimized for **Streamlit Community Cloud**. It automatically d
 
 1. **Push to GitHub**: Ensure your repository is public and contains `requirements.txt`.
 2. **Connect to Streamlit**: Log in to [Streamlit Share](https://share.streamlit.io/) and select this repository.
-3. **Set Main File**: Point to `operations_ai_system/app.py` (if using the subdirectory).
-4. **Configure Secrets**: In the App Settings -> Secrets, paste your OpenAI key:
+3. **Set Main File**: Point to `operations_ai_system/app.py`.
+4. **Configure Secrets**: In the App Settings -> Secrets, paste your keys:
    ```toml
    OPENAI_API_KEY = "sk-proj-..."
-   
-   # Optional: SMTP for real emails
-   SMTP_SERVER = "smtp.gmail.com"
-   SMTP_PORT = 587
-   SMTP_USER = "your-email@gmail.com"
-   SMTP_PASSWORD = "your-app-password"
+   RESEND_API_KEY = "re_..." # Optional for real emails
    ```
 
 ---
