@@ -76,8 +76,8 @@ class TestQueryEngine(unittest.TestCase):
         
         result = self.engine._execute_order_growth(intent)
         # Roma: (330-300)/300 = 10%
-        roma_growth = result.df[result.df["ZONE"] == "Roma"]["growth_pct"].values[0]
-        self.assertEqual(roma_growth, 10.0)
+        roma_growth = result.df[result.df["ZONE"] == "Roma"]["% Crecimiento"].values[0]
+        self.assertAlmostEqual(roma_growth, 10.0, places=1)
 
     # ── Edge Case Tests ─────────────────────────────────────────────
 

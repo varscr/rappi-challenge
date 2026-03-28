@@ -275,6 +275,7 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
             <li><strong>{{ anomaly_count }}</strong> anomalías críticas detectadas.</li>
             <li><strong>{{ trend_count }}</strong> métricas en descenso prolongado.</li>
             <li><strong>{{ underperformer_count }}</strong> zonas con desempeño significativamente bajo.</li>
+            <li><strong>{{ correlation_count }}</strong> correlaciones significativas entre métricas.</li>
         </ul>
     </div>
 
@@ -347,7 +348,25 @@ REPORT_TEMPLATE = """<!DOCTYPE html>
     <p>Todas las zonas operan dentro de los rangos normales de sus pares.</p>
     {% endif %}
 
-    <h2>5. Recomendaciones Prioritarias</h2>
+    <h2>5. Correlaciones entre Métricas</h2>
+    <p class="note">Top {{ config.TOP_CORRELATIONS }} pares de métricas con mayor correlación de Pearson (r >= {{ config.CORRELATION_MODERATE }}).</p>
+    {% if correlations %}
+    <table>
+        <tr><th>Métrica 1</th><th>Métrica 2</th><th>Correlación (r)</th><th>Fuerza</th></tr>
+        {% for row in correlations %}
+        <tr>
+            <td><span class="metric-tag">{{ row.metric_1 }}</span></td>
+            <td><span class="metric-tag">{{ row.metric_2 }}</span></td>
+            <td>{{ row.correlation }}</td>
+            <td>{{ row.strength }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No se detectaron correlaciones significativas entre las métricas disponibles.</p>
+    {% endif %}
+
+    <h2>6. Recomendaciones Prioritarias</h2>
     <div class="recommendation">
         <ul>
         {% for rec in recommendations %}
@@ -414,6 +433,7 @@ def generate_report(output_path: Path | None = None) -> tuple[Path, str, dict]:
     anomalies = detect_anomalies(df_metrics, week_labels, dimensions, metric_col)
     trends = detect_concerning_trends(df_metrics, week_labels, dimensions, metric_col)
     underperformers = benchmark_zones(df_metrics, week_labels, dimensions, metric_col)
+    correlations = compute_correlations(df_metrics, week_labels, dimensions, metric_col)
     growth = detect_growth_opportunities(df_orders, week_labels, dimensions)
     recommendations = generate_recommendations(anomalies, trends, underperformers, growth)
 
@@ -428,10 +448,12 @@ def generate_report(output_path: Path | None = None) -> tuple[Path, str, dict]:
         anomaly_count=len(anomalies),
         trend_count=len(trends),
         underperformer_count=len(underperformers),
+        correlation_count=len(correlations),
         growth=growth.to_dict("records") if not growth.empty else [],
         anomalies=anomalies.to_dict("records") if not anomalies.empty else [],
         trends=trends.to_dict("records") if not trends.empty else [],
         underperformers=underperformers.to_dict("records") if not underperformers.empty else [],
+        correlations=correlations.to_dict("records") if not correlations.empty else [],
         recommendations=recommendations,
     )
 
@@ -446,6 +468,7 @@ def generate_report(output_path: Path | None = None) -> tuple[Path, str, dict]:
         "anomalies": len(anomalies),
         "trends": len(trends),
         "underperformers": len(underperformers),
+        "correlations": len(correlations),
         "growth": len(growth)
     }
     
