@@ -62,3 +62,8 @@ operations_ai_system/GEMINI.md
 operations_ai_system/skills/
 operations_ai_system/dist/
 competitive_intelligence/GEMINI.md
+# Competitive Intelligence Scraper
+competitive_intelligence/data/raw/*.json
+competitive_intelligence/data/processed/
+competitive_intelligence/logs/
+competitive_intelligence/reports/screenshots/
