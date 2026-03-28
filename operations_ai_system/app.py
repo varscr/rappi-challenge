@@ -13,24 +13,60 @@ from src.query_engine import QueryEngine, QueryResult
 
 st.set_page_config(
     page_title="Rappi Operations AI",
-    page_icon="📊",
+    page_icon="⬢",
     layout="wide",
 )
 
 # Rappi Brand Colors
 RAPPI_ORANGE = "#FF441F"
+RAPPI_COLORS = [RAPPI_ORANGE, "#1F2937", "#4B5563", "#9CA3AF", "#E5E7EB"]
 
 # Custom Styling
 st.markdown(f"""
     <style>
+    /* Top accent bar */
+    .stApp::before {{
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background-color: {RAPPI_ORANGE};
+        z-index: 9999;
+    }}
     .main .block-container {{ padding-top: 2rem; }}
-    h1 {{ color: {RAPPI_ORANGE}; }}
-    .stButton>button {{ background-color: {RAPPI_ORANGE}; color: white; border-radius: 5px; }}
+    h1, h2, h3 {{ color: {RAPPI_ORANGE} !important; }}
+    
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {{
+        background-color: #FFF9F8;
+    }}
+    section[data-testid="stSidebar"] h2 {{
+        color: {RAPPI_ORANGE} !important;
+    }}
+    
+    /* Minimalist Chat Styling */
+    [data-testid="stChatMessage"] {{
+        background-color: transparent !important;
+        border: none !important;
+        padding-top: 0rem !important;
+        padding-bottom: 0rem !important;
+    }}
+    [data-testid="stChatMessage"] [data-testid="stChatMessageAvatar"] {{
+        background-color: transparent !important;
+        color: {RAPPI_ORANGE} !important;
+    }}
+    /* Target icons specifically if they are SVGs */
+    [data-testid="stChatMessageAvatar"] svg {{
+        fill: {RAPPI_ORANGE} !important;
+    }}
+    
     .stTextInput>div>div>input {{ border-radius: 5px; }}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📊 Asistente de IA para Operaciones Rappi")
+st.title("⬢ Asistente de IA para Operaciones Rappi")
 st.caption("Realiza consultas sobre métricas operacionales en lenguaje natural.")
 
 
@@ -100,20 +136,20 @@ def render_bar_chart(result: QueryResult) -> None:
     if result.query_type == "filter_rank":
         x_col, color_col = _chart_dims(df, {metric})
         fig = px.bar(df, x=x_col, y=metric, color=color_col, title=f"Top Zonas por {metric}",
-                     color_discrete_sequence=px.colors.qualitative.Bold)
+                     color_discrete_sequence=RAPPI_COLORS)
     elif result.query_type == "compare":
         x_col = df.columns[0]
         fig = px.bar(df, x=x_col, y=metric, title=f"{metric} por {x_col}",
-                     color_discrete_sequence=[RAPPI_ORANGE])
+                     color_discrete_sequence=RAPPI_COLORS)
     elif result.query_type == "aggregate":
         x_col = df.columns[0]
         avg_col = f"{metric} (avg)"
         fig = px.bar(df, x=x_col, y=avg_col, title=f"Promedio de {metric} por {x_col}",
-                     color_discrete_sequence=[RAPPI_ORANGE])
+                     color_discrete_sequence=RAPPI_COLORS)
     elif result.query_type == "order_growth":
         x_col, color_col = _chart_dims(df, {"growth_pct", f"Orders ({df.columns[-3]})" if len(df.columns) > 3 else ""})
         fig = px.bar(df, x=x_col, y="growth_pct", color=color_col, title="Crecimiento de Órdenes (%)",
-                     color_discrete_sequence=px.colors.qualitative.Safe)
+                     color_discrete_sequence=RAPPI_COLORS)
     else:
         return
 
@@ -129,11 +165,11 @@ def render_line_chart(result: QueryResult) -> None:
 
     if color_col and df[color_col].nunique() > 1:
         fig = px.line(df, x="Week", y=metric, color=color_col, title=f"Tendencia de {metric}",
-                      color_discrete_sequence=px.colors.qualitative.Bold)
+                      color_discrete_sequence=RAPPI_COLORS)
     else:
         label = df[color_col].iloc[0] if color_col and color_col in df.columns and not df.empty else "Zona"
         fig = px.line(df, x="Week", y=metric, title=f"{metric} — {label}",
-                      color_discrete_sequence=[RAPPI_ORANGE])
+                      color_discrete_sequence=RAPPI_COLORS)
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -141,7 +177,9 @@ def render_line_chart(result: QueryResult) -> None:
 # ── Render chat history ─────────────────────────────────────────
 
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
+    # Use minimalist Material Icons
+    avatar = ":material/smart_toy:" if msg["role"] == "assistant" else ":material/person:"
+    with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
         if "result" in msg:
             render_result(msg["result"], msg.get("chart_type"))
@@ -151,10 +189,10 @@ for msg in st.session_state.messages:
 
 if prompt := st.chat_input("Consulta sobre operaciones de Rappi..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=":material/person:"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=":material/smart_toy:"):
         with st.spinner("Analizando..."):
             engine = get_engine()
             try:
@@ -206,26 +244,26 @@ with st.sidebar:
 
     st.divider()
     
-    with st.sidebar.expander("📋 Reporte Ejecutivo de Insights", expanded=True):
+    with st.sidebar.expander("☰ Reporte Ejecutivo de Insights", expanded=True):
         st.write("Análisis automático de anomalías, tendencias y benchmarking.")
         
-        if st.button("🚀 Generar Nuevo Análisis", use_container_width=True):
+        if st.button("▶ Generar Nuevo Análisis", use_container_width=True):
             from generate_report import generate_report
             with st.spinner("Analizando..."):
                 path, html, stats = generate_report()
                 st.session_state.last_report = {"path": path, "html": html, "stats": stats}
-                st.toast("¡Análisis completado!", icon="🚀")
+                st.toast("¡Análisis completado!", icon="▶")
 
         if "last_report" in st.session_state:
             report = st.session_state.last_report
             
             # --- Actions Tabs ---
             st.markdown("---")
-            tab_dl, tab_em = st.tabs(["💾 Descargar", "📧 Enviar"])
+            tab_dl, tab_em = st.tabs(["↓ Descargar", "✉ Enviar"])
             
             with tab_dl:
                 st.download_button(
-                    label="📥 Bajar HTML",
+                    label="↓ Bajar HTML",
                     data=report["html"],
                     file_name=report["path"].name,
                     mime="text/html",
@@ -245,12 +283,12 @@ with st.sidebar:
                             success, message = send_report_email(email_recipient, report["html"], report["path"])
                             if success:
                                 st.success(message)
-                                st.toast(message, icon="📧")
+                                st.toast(message, icon="✉")
                             else:
                                 st.error(message)
 
     st.divider()
-    if st.button("🗑️ Borrar chat"):
+    if st.button("✕ Borrar historial de chat", use_container_width=True):
         st.session_state.messages = []
         if "engine" in st.session_state:
             st.session_state.engine.llm.memory.clear()
