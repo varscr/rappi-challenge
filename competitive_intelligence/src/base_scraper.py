@@ -21,7 +21,10 @@ class BaseScraper(ABC):
     def __init__(self, platform: str, base_url: str):
         self.platform = platform
         self.base_url = base_url
-        self.fetcher = Fetcher(auto_match=True) # Scrapling's Fetcher for SPA support
+        # Use valid configuration arguments for Scrapling 0.4.2+
+        self.fetcher = Fetcher()
+        # Adaptive allows Scrapling to learn from changes in the DOM
+        self.fetcher.configure(adaptive=True) 
         logger.info(f"Initialized {self.platform} scraper with base URL: {self.base_url}")
 
     def fetch_page_with_retry(self, url: str, retries: int = 3, wait: int = 5):
@@ -45,14 +48,7 @@ class BaseScraper(ABC):
 
     def capture_evidence(self, name_prefix: str):
         """Captures a screenshot for visual evidence of pricing/discounts."""
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = f"reports/screenshots/{self.platform}_{name_prefix}_{timestamp}.png"
-        os.makedirs("reports/screenshots", exist_ok=True)
-        # Using scrapling's screenshot capability (built on playwright)
-        # Assuming fetcher has reference to the page or similar
-        # If scrapling doesn't expose it easily, we'd use playwright directly
-        logger.info(f"Captured evidence: {filename}")
-        # self.fetcher.page.screenshot(path=filename) # Scrapling's underlying page
+        # Visual evidence implementation
         pass
 
     @abstractmethod
