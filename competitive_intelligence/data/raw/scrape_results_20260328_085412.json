@@ -1,0 +1,290 @@
+[
+    {
+        "platform": "Rappi",
+        "store_name": "McDonald's Polanco",
+        "address_name": "Polanco",
+        "lat": 19.4335,
+        "lon": -99.1909,
+        "delivery_fee": 25.0,
+        "service_fee": 15.0,
+        "estimated_time": "20-35 min",
+        "availability": true,
+        "active_discounts": [
+            "Rappi Pro: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.161735",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 189.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 125.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 354.0
+    },
+    {
+        "platform": "Uber Eats",
+        "store_name": "McDonald's - Polanco",
+        "address_name": "Polanco",
+        "lat": 19.4335,
+        "lon": -99.1909,
+        "delivery_fee": 19.0,
+        "service_fee": 12.0,
+        "estimated_time": "15-30 min",
+        "availability": true,
+        "active_discounts": [
+            "Uber One: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.161816",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 195.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 135.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 361.0
+    },
+    {
+        "platform": "DiDi Food",
+        "store_name": "McDonal's - Polanco",
+        "address_name": "Polanco",
+        "lat": 19.4335,
+        "lon": -99.1909,
+        "delivery_fee": 15.0,
+        "service_fee": 8.0,
+        "estimated_time": "25-40 min",
+        "availability": true,
+        "active_discounts": [
+            "40% Off Combo"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.161868",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 175.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 115.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 313.0
+    },
+    {
+        "platform": "Rappi",
+        "store_name": "McDonald's Polanco",
+        "address_name": "Condesa",
+        "lat": 19.4149,
+        "lon": -99.1764,
+        "delivery_fee": 25.0,
+        "service_fee": 15.0,
+        "estimated_time": "20-35 min",
+        "availability": true,
+        "active_discounts": [
+            "Rappi Pro: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.161936",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 189.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 125.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 354.0
+    },
+    {
+        "platform": "Uber Eats",
+        "store_name": "McDonald's - Polanco",
+        "address_name": "Condesa",
+        "lat": 19.4149,
+        "lon": -99.1764,
+        "delivery_fee": 19.0,
+        "service_fee": 12.0,
+        "estimated_time": "15-30 min",
+        "availability": true,
+        "active_discounts": [
+            "Uber One: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.161975",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 195.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 135.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 361.0
+    },
+    {
+        "platform": "DiDi Food",
+        "store_name": "McDonal's - Polanco",
+        "address_name": "Condesa",
+        "lat": 19.4149,
+        "lon": -99.1764,
+        "delivery_fee": 15.0,
+        "service_fee": 8.0,
+        "estimated_time": "25-40 min",
+        "availability": true,
+        "active_discounts": [
+            "40% Off Combo"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.162014",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 175.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 115.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 313.0
+    },
+    {
+        "platform": "Rappi",
+        "store_name": "McDonald's Polanco",
+        "address_name": "Roma Norte",
+        "lat": 19.4183,
+        "lon": -99.1626,
+        "delivery_fee": 25.0,
+        "service_fee": 15.0,
+        "estimated_time": "20-35 min",
+        "availability": true,
+        "active_discounts": [
+            "Rappi Pro: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.162083",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 189.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 125.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 354.0
+    },
+    {
+        "platform": "Uber Eats",
+        "store_name": "McDonald's - Polanco",
+        "address_name": "Roma Norte",
+        "lat": 19.4183,
+        "lon": -99.1626,
+        "delivery_fee": 19.0,
+        "service_fee": 12.0,
+        "estimated_time": "15-30 min",
+        "availability": true,
+        "active_discounts": [
+            "Uber One: $0 Delivery"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.162118",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 195.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 135.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 361.0
+    },
+    {
+        "platform": "DiDi Food",
+        "store_name": "McDonal's - Polanco",
+        "address_name": "Roma Norte",
+        "lat": 19.4183,
+        "lon": -99.1626,
+        "delivery_fee": 15.0,
+        "service_fee": 8.0,
+        "estimated_time": "25-40 min",
+        "availability": true,
+        "active_discounts": [
+            "40% Off Combo"
+        ],
+        "scraped_at": "2026-03-28 13:54:12.162151",
+        "products": [
+            {
+                "name": "Big Mac Combo",
+                "price": 175.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            },
+            {
+                "name": "10-pc Nuggets",
+                "price": 115.0,
+                "original_price": null,
+                "category": "Fast Food",
+                "description": null
+            }
+        ],
+        "total_base_price": 313.0
+    }
+]
