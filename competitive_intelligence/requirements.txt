@@ -1,0 +1,26 @@
+# Core Scraping & Stealth
+streamlit
+scrapling
+curl_cffi
+playwright
+browserforge
+
+# Data Processing & Integrity
+pandas
+pydantic
+rapidfuzz
+duckdb
+python-dotenv
+geopy
+
+# Analysis & Visualization
+matplotlib
+seaborn
+plotly
+folium
+
+# Infrastructure & Tooling
+jupyter
+pytest
+tqdm
+loguru
