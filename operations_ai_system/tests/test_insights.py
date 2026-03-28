@@ -7,6 +7,8 @@ class TestInsightDetectors(unittest.TestCase):
     def setUp(self):
         # Mocking data for testing
         self.week_labels = ["L2W", "L1W", "L0W"]
+        self.dimensions = ["COUNTRY", "CITY", "ZONE"]
+        self.metric_col = "METRIC"
         self.mock_df = pd.DataFrame({
             "COUNTRY": ["CO", "MX", "BR"],
             "CITY": ["Bogota", "CDMX", "Sao Paulo"],
@@ -19,7 +21,7 @@ class TestInsightDetectors(unittest.TestCase):
 
     def test_detect_anomalies(self):
         """Test WoW anomaly detection (threshold 0.10)."""
-        anomalies = detect_anomalies(self.mock_df, self.week_labels, threshold=0.10)
+        anomalies = detect_anomalies(self.mock_df, self.week_labels, self.dimensions, self.metric_col, threshold=0.10)
         # Expected: A, B, and C are all anomalies (>10% change)
         self.assertEqual(len(anomalies), 3)
         zones = set(anomalies["ZONE"])
@@ -29,7 +31,7 @@ class TestInsightDetectors(unittest.TestCase):
 
     def test_detect_trends(self):
         """Test detection of consecutive declines."""
-        trends = detect_concerning_trends(self.mock_df, self.week_labels, consecutive_weeks=2)
+        trends = detect_concerning_trends(self.mock_df, self.week_labels, self.dimensions, self.metric_col, consecutive_weeks=2)
         # Expected: B (0.8->0.7->0.6) and C (0.9->0.8->0.7)
         self.assertEqual(len(trends), 2)
         zones = set(trends["ZONE"])
@@ -45,13 +47,13 @@ class TestInsightDetectors(unittest.TestCase):
             "METRIC": ["Orders"], "L1W": [0], "L0W": [10]
         })
         # L1W is 0 -> wow_change is NaN -> abs_change is NaN -> NaN > 0.1 is False
-        anomalies = detect_anomalies(df_zero, ["L1W", "L0W"])
+        anomalies = detect_anomalies(df_zero, ["L1W", "L0W"], self.dimensions, self.metric_col)
         self.assertEqual(len(anomalies), 0)  # Correctly filtered out
 
     def test_detect_trends_empty_data(self):
         """Verify that empty dataframe doesn't cause crash in trend detection."""
         empty_df = pd.DataFrame(columns=["COUNTRY", "CITY", "ZONE", "METRIC", "L2W", "L1W", "L0W"])
-        trends = detect_concerning_trends(empty_df, self.week_labels)
+        trends = detect_concerning_trends(empty_df, self.week_labels, self.dimensions, self.metric_col)
         self.assertTrue(trends.empty)
 
 if __name__ == "__main__":
