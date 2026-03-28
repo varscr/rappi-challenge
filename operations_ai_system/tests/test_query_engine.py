@@ -39,6 +39,7 @@ class TestQueryEngine(unittest.TestCase):
         intent = {
             "query_type": "filter_rank",
             "metric": "Lead Penetration",
+            "filters": {},
             "top_n": 2,
             "sort_order": "desc",
             "weeks": 1
@@ -55,7 +56,7 @@ class TestQueryEngine(unittest.TestCase):
             "query_type": "compare",
             "metric": "Lead Penetration",
             "group_by": "ZONE_TYPE",
-            "country": "CO",
+            "filters": {"COUNTRY": "CO"},
             "weeks": 1
         }
         
@@ -69,6 +70,7 @@ class TestQueryEngine(unittest.TestCase):
         """Test order growth calculation."""
         intent = {
             "query_type": "order_growth",
+            "filters": {},
             "weeks": 2
         }
         
@@ -94,7 +96,7 @@ class TestQueryEngine(unittest.TestCase):
         intent = {
             "query_type": "filter_rank",
             "metric": "Lead Penetration",
-            "country": "AR",  # Not in mock data
+            "filters": {"COUNTRY": "AR"},  # Not in mock data
             "top_n": 5
         }
         result = self.engine._execute_filter_rank(intent)

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import pandas as pd
 
 from src.data_loader import (
+    get_dimension_columns,
+    get_metric_column,
     get_schema_summary,
     get_valid_metrics,
 )
@@ -43,6 +45,8 @@ class QueryEngine:
         self.df_orders = df_orders
         self.week_labels = week_labels
         self.current_week = week_labels[-1] if week_labels else "L0W"
+        self.dimensions = get_dimension_columns(df_metrics, week_labels)
+        self.metric_col = get_metric_column(df_metrics)
         
         self.valid_metrics = get_valid_metrics(df_metrics)
         self.schema_context = get_schema_summary(df_metrics, df_orders, week_labels)
@@ -68,6 +72,12 @@ class QueryEngine:
         result = self._execute(intent)
         narration = self._narrate(question, result)
         suggestions = self._suggest(question, intent)
+        
+        # Add to memory for true conversational flow
+        self.llm.memory.add("user", question)
+        self.llm.memory.add("assistant", narration)
+        self.llm.memory.last_intent = intent
+        
         return result, narration, suggestions
 
     # ── Intent Parsing ──────────────────────────────────────────────
@@ -127,17 +137,18 @@ class QueryEngine:
         return executor(intent)
 
     def _apply_filters(self, df: pd.DataFrame, intent: dict) -> pd.DataFrame:
-        """Apply geographic and classification filters from intent."""
-        if intent.get("country"):
-            df = df[df["COUNTRY"] == intent["country"]]
-        if intent.get("city"):
-            df = df[df["CITY"].str.contains(intent["city"], case=False, na=False)]
-        if intent.get("zone"):
-            df = df[df["ZONE"].str.contains(intent["zone"], case=False, na=False)]
-        if intent.get("zone_type"):
-            df = df[df["ZONE_TYPE"] == intent["zone_type"]]
-        if intent.get("zone_prioritization"):
-            df = df[df["ZONE_PRIORITIZATION"] == intent["zone_prioritization"]]
+        """Apply filters dynamically based on the intent's filters object."""
+        filters = intent.get("filters", {})
+        if not isinstance(filters, dict):
+            return df
+            
+        for dim, value in filters.items():
+            if dim in self.dimensions and value:
+                # Use str.contains for partial matches, exactly for others
+                if pd.api.types.is_string_dtype(df[dim]):
+                     df = df[df[dim].str.contains(str(value), case=False, na=False)]
+                else:
+                     df = df[df[dim] == value]
         return df
 
     def _week_columns(self, weeks: int) -> list[str]:
@@ -150,11 +161,14 @@ class QueryEngine:
         top_n = intent.get("top_n", 10)
         ascending = intent.get("sort_order") == "asc"
 
-        df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
+        df = self.df_metrics[self.df_metrics[self.metric_col] == metric].copy()
         df = self._apply_filters(df, intent)
 
         df = df.sort_values(self.current_week, ascending=ascending).head(top_n)
-        result = df[["COUNTRY", "CITY", "ZONE", "ZONE_TYPE", self.current_week]].copy()
+        
+        # Include all dimensions up to the display column for context
+        cols_to_keep = self.dimensions + [self.current_week]
+        result = df[cols_to_keep].copy()
         result = result.rename(columns={self.current_week: metric})
 
         return QueryResult(
@@ -166,15 +180,21 @@ class QueryEngine:
         )
 
     def _execute_compare(self, intent: dict) -> QueryResult:
-        """Compare metric grouped by zone_type or country."""
+        """Compare metric grouped by a dynamic dimension."""
         metric = intent["metric"]
-        group_by = str(intent.get("group_by", "zone_type")).lower()
+        group_by = intent.get("group_by")
+        
+        if group_by not in self.dimensions:
+             # Default to the second-highest dimension (often CITY or ZONE_TYPE)
+             group_by = self.dimensions[min(1, len(self.dimensions)-1)] if self.dimensions else "Index"
 
-        df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
+        df = self.df_metrics[self.df_metrics[self.metric_col] == metric].copy()
         df = self._apply_filters(df, intent)
 
-        group_col = "ZONE_TYPE" if group_by == "zone_type" else "COUNTRY"
-        result = df.groupby(group_col)[self.current_week].mean().reset_index()
+        if group_by not in df.columns:
+            return QueryResult(df=pd.DataFrame(), query_type="compare", metric=metric, intent=intent)
+
+        result = df.groupby(group_by)[self.current_week].mean().reset_index()
         result = result.rename(columns={self.current_week: metric})
         result = result.sort_values(metric, ascending=False)
 
@@ -187,12 +207,12 @@ class QueryEngine:
         )
 
     def _execute_trend(self, intent: dict) -> QueryResult:
-        """Metric evolution over weeks for a specific zone."""
+        """Metric evolution over weeks for a specific filter."""
         metric = intent["metric"]
         weeks = intent.get("weeks", len(self.week_labels))
         week_cols = self._week_columns(weeks)
 
-        df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
+        df = self.df_metrics[self.df_metrics[self.metric_col] == metric].copy()
         df = self._apply_filters(df, intent)
 
         if df.empty:
@@ -200,9 +220,8 @@ class QueryEngine:
                 df=pd.DataFrame(), query_type="trend", metric=metric, intent=intent
             )
 
-        id_cols = ["COUNTRY", "CITY", "ZONE"]
-        result = df[id_cols + week_cols].melt(
-            id_vars=id_cols,
+        result = df[self.dimensions + week_cols].melt(
+            id_vars=self.dimensions,
             value_vars=week_cols,
             var_name="Week",
             value_name=metric,
@@ -217,17 +236,27 @@ class QueryEngine:
         )
 
     def _execute_aggregate(self, intent: dict) -> QueryResult:
-        """Metric average/median grouped by country or zone_type."""
+        """Metric average/median grouped by a dimension."""
         metric = intent["metric"]
-        group_by = str(intent.get("group_by", "country")).lower()
+        group_by = intent.get("group_by")
+        
+        if group_by not in self.dimensions:
+             # Default to the highest dimension (often COUNTRY)
+             group_by = self.dimensions[0] if self.dimensions else "Index"
 
-        df = self.df_metrics[self.df_metrics["METRIC"] == metric].copy()
+        df = self.df_metrics[self.df_metrics[self.metric_col] == metric].copy()
         df = self._apply_filters(df, intent)
 
-        group_col = "COUNTRY" if group_by == "country" else "ZONE_TYPE"
-        result = df.groupby(group_col)[self.current_week].agg(["mean", "median", "count"]).reset_index()
-        result = result.rename(columns={"mean": f"{metric} (avg)", "median": f"{metric} (median)"})
-        result = result.sort_values(f"{metric} (avg)", ascending=False)
+        if group_by not in df.columns:
+             return QueryResult(df=pd.DataFrame(), query_type="aggregate", metric=metric, intent=intent)
+
+        result = df.groupby(group_by)[self.current_week].agg(["mean", "median", "count"]).reset_index()
+        result = result.rename(columns={
+            "mean": f"{metric} (promedio)", 
+            "median": f"{metric} (mediana)",
+            "count": "Conteo de registros"
+        })
+        result = result.sort_values(f"{metric} (promedio)", ascending=False)
 
         return QueryResult(
             df=result,
@@ -250,12 +279,12 @@ class QueryEngine:
 
         metric_a, metric_b = metrics[0], metrics[1]
 
-        df = self.df_metrics[self.df_metrics["METRIC"].isin([metric_a, metric_b])].copy()
+        df = self.df_metrics[self.df_metrics[self.metric_col].isin([metric_a, metric_b])].copy()
         df = self._apply_filters(df, intent)
 
         pivot = df.pivot_table(
-            index=["COUNTRY", "CITY", "ZONE"],
-            columns="METRIC",
+            index=self.dimensions,
+            columns=self.metric_col,
             values=self.current_week,
         ).reset_index()
 
@@ -289,7 +318,7 @@ class QueryEngine:
         )
 
     def _execute_order_growth(self, intent: dict) -> QueryResult:
-        """Zones with highest order growth over recent weeks."""
+        """Zones with highest order growth + explanations from other metrics."""
         weeks = intent.get("weeks", 5)
         top_n = intent.get("top_n", 10)
         ascending = intent.get("sort_order") == "asc"
@@ -298,18 +327,42 @@ class QueryEngine:
         df = self.df_orders.copy()
         df = self._apply_filters(df, intent)
 
+        if not week_cols or len(week_cols) < 2:
+            return QueryResult(df=pd.DataFrame(), query_type="order_growth", metric="Orders", intent=intent)
+
         first_col = week_cols[0]
         last_col = week_cols[-1]
 
+        # 1. Calculate Growth
         df["growth_pct"] = (df[last_col] - df[first_col]) / df[first_col].replace(0, float("nan"))
         df = df.sort_values("growth_pct", ascending=ascending).head(top_n)
+        
+        # 2. Add "Explainer" Metrics
+        # Pivot the metrics table for the current week to get explanatory features
+        explainer_pivot = self.df_metrics.pivot_table(
+            index=self.dimensions,
+            columns=self.metric_col,
+            values=self.current_week
+        ).reset_index()
+        
+        # Select top explanatory metrics (e.g., Lead Penetration, Pro Adoption)
+        top_explainer_metrics = ["Lead Penetration", "Pro Adoption", "Perfect Orders"]
+        available_explainers = [m for m in top_explainer_metrics if m in explainer_pivot.columns]
+        
+        # Join growth data with explanatory metrics
+        order_dims = [d for d in self.dimensions if d in df.columns]
+        result = df.merge(explainer_pivot[order_dims + available_explainers], on=order_dims, how="left")
 
-        result = df[["COUNTRY", "CITY", "ZONE", first_col, last_col, "growth_pct"]].copy()
+        # 3. Finalize result columns
+        cols_to_keep = order_dims + [first_col, last_col, "growth_pct"] + available_explainers
+        result = result[cols_to_keep].copy()
+        
         result = result.rename(columns={
-            first_col: f"Orders ({first_col})",
-            last_col: f"Orders ({last_col})",
+            first_col: f"Órdenes ({first_col})",
+            last_col: f"Órdenes ({last_col})",
+            "growth_pct": "% Crecimiento"
         })
-        result["growth_pct"] = (result["growth_pct"] * 100).round(2)
+        result["% Crecimiento"] = (result["% Crecimiento"] * 100).round(2)
 
         return QueryResult(
             df=result,
@@ -323,8 +376,12 @@ class QueryEngine:
 
     def _narrate(self, question: str, result: QueryResult) -> str:
         """Generate business-language narration of the result."""
+        # IF query type is unknown, it's likely a conversational meta-question
+        if result.query_type == "unknown":
+            return self.llm.chat(question)
+
         if result.df.empty:
-            return "No data found for this query. Try adjusting the filters or rephrasing the question."
+            return "No se encontraron datos para esta consulta. Intenta ajustar los filtros o replantear la pregunta."
 
         table_str = result.df.head(15).to_string(index=False)
         prompt = RESPONSE_NARRATOR_PROMPT.format(
@@ -339,5 +396,7 @@ class QueryEngine:
             user_question=question,
             query_type=intent.get("query_type", ""),
             metric=intent.get("metric", ""),
+            weeks_count=len(self.week_labels),
+            dimensions_list=", ".join(self.dimensions),
         )
         return self.llm.suggest_followups(prompt)
