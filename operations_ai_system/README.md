@@ -192,6 +192,16 @@ The app auto-detects the environment and uses `st.secrets` for API keys. Deploy 
 
 ---
 
+## AI Tools Used
+
+This project was developed with the assistance of several AI-powered engineering tools to accelerate development, ensure best practices, and automate repetitive tasks:
+
+- **Claude Code**: For architectural design, complex refactoring, and implementing core logic across the data engine and insights system.
+- **Gemini CLI**: For rapid UI iterations, real-time branding adjustments, and collaborative peer-programming sessions.
+- **OpenCode**: For codebase navigation, structural analysis, and ensuring consistency across modules.
+
+---
+
 ## API Cost Estimation
 
 Based on OpenAI GPT-4o pricing (~$2.50/1M input, ~$10.00/1M output):
