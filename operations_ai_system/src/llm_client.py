@@ -41,25 +41,23 @@ class LLMClient:
     """OpenAI API client for intent parsing and response narration."""
 
     def __init__(self) -> None:
+        import streamlit as st
         api_key = os.getenv("OPENAI_API_KEY")
+        
+        # Cloud-Ready API Key detection
+        try:
+            if not api_key and "OPENAI_API_KEY" in st.secrets:
+                api_key = st.secrets["OPENAI_API_KEY"]
+        except Exception:
+            pass
+
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set. Copy .env.example to .env and add your key.")
         self.client = OpenAI(api_key=api_key)
         self.memory = ConversationMemory()
 
     def parse_intent(self, system_prompt: str, user_question: str) -> dict:
-        """Parse a user question into a structured JSON intent.
-
-        Args:
-            system_prompt: Fully formatted intent parser prompt with schema context.
-            user_question: The user's natural language question.
-
-        Returns:
-            Parsed intent dictionary.
-
-        Raises:
-            ValueError: If JSON parsing fails after retries.
-        """
+        """Parse a user question into a structured JSON intent."""
         messages = [
             {"role": "system", "content": system_prompt},
             *self.memory.get_messages(),
@@ -76,9 +74,7 @@ class LLMClient:
             raw = response.choices[0].message.content
             try:
                 intent = json.loads(raw)
-                self.memory.add("user", user_question)
-                self.memory.add("assistant", raw)
-                self.memory.last_intent = intent
+                # Don't add to memory here, we add after execution/narration in QueryEngine
                 return intent
             except json.JSONDecodeError:
                 if attempt == MAX_RETRIES - 1:
@@ -87,14 +83,7 @@ class LLMClient:
         raise ValueError("Unreachable: exhausted retries")
 
     def narrate(self, prompt: str) -> str:
-        """Generate a business-language narration of query results.
-
-        Args:
-            prompt: Fully formatted narrator prompt with question and results.
-
-        Returns:
-            Natural language response string.
-        """
+        """Generate a business-language narration of query results."""
         response = self.client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
@@ -102,15 +91,22 @@ class LLMClient:
         )
         return response.choices[0].message.content
 
+    def chat(self, user_question: str) -> str:
+        """Answer meta-questions about the chat using history."""
+        messages = [
+            {"role": "system", "content": "Eres un asistente de Rappi. Responde preguntas sobre la conversación actual en español."},
+            *self.memory.get_messages(),
+            {"role": "user", "content": user_question},
+        ]
+        response = self.client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.5,
+        )
+        return response.choices[0].message.content
+
     def suggest_followups(self, prompt: str) -> list[str]:
-        """Generate follow-up question suggestions.
-
-        Args:
-            prompt: Fully formatted suggestion prompt.
-
-        Returns:
-            List of 2 suggested follow-up questions.
-        """
+        """Generate follow-up question suggestions."""
         response = self.client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
