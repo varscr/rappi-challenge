@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, computed_field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ScrapedProduct(BaseModel):
     name: str = Field(..., description="Name of the product")
@@ -21,7 +21,7 @@ class ScrapedStore(BaseModel):
     time_minutes: Optional[int] = Field(None, ge=0, description="Normalized time in minutes for analysis and charting")
     availability: bool = Field(True, description="Whether the store is currently open/available")
     active_discounts: List[str] = Field(default_factory=list, description="List of visible promotions/coupons")
-    scraped_at: datetime = Field(default_factory=datetime.utcnow, description="UTC timestamp of the scrape")
+    scraped_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of the scrape")
     products: List[ScrapedProduct] = Field(default_factory=list, description="List of standardized products found")
 
     @computed_field
