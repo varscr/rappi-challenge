@@ -1,15 +1,25 @@
 import os
 from pathlib import Path
 import streamlit as st
-import resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def send_report_email(recipient_email: str, html_content: str, report_path: Path) -> bool:
-    """Send the HTML report via Resend API. Supports real or simulated mode."""
+def send_report_email(recipient_email: str, html_content: str, report_path: Path) -> tuple[bool, str]:
+    """Send the HTML report via Resend API. Supports real or simulated mode.
     
-    # 1. Get API Key from environment or st.secrets
+    Returns:
+        (success_bool, status_message)
+    """
+    
+    # 1. Try to import resend, handle gracefully if missing
+    try:
+        import resend
+    except ImportError:
+        st.info("ℹ️ Modo Simulación: Librería 'resend' no instalada.")
+        return True, "Simulación: Librería faltante"
+
+    # 2. Get API Key from environment or st.secrets
     resend_api_key = os.getenv("RESEND_API_KEY")
     
     # If running on Streamlit Cloud, st.secrets will be available
@@ -19,17 +29,15 @@ def send_report_email(recipient_email: str, html_content: str, report_path: Path
     except Exception:
         pass
 
-    # 2. Simulated mode if API Key is missing
+    # 3. Simulated mode if API Key is missing
     if not resend_api_key:
-        print(f"SIMULATION: Email would be sent to {recipient_email} using Resend API.")
-        return True
+        st.info("ℹ️ Modo Simulación: No se encontró RESEND_API_KEY.")
+        return True, "Simulación: Sin API Key"
 
-    # 3. Real Resend logic
+    # 4. Real Resend logic
     try:
         resend.api_key = resend_api_key
         
-        # Resend Free Tier requires sending from a verified domain or 'onboarding@resend.dev'
-        # if no domain is verified yet.
         params = {
             "from": "Rappi AI <onboarding@resend.dev>",
             "to": [recipient_email],
@@ -37,8 +45,15 @@ def send_report_email(recipient_email: str, html_content: str, report_path: Path
             "html": html_content,
         }
 
-        resend.Emails.send(params)
-        return True
+        r = resend.Emails.send(params)
+        # Resend returns an ID if successful
+        if hasattr(r, "id") or (isinstance(r, dict) and "id" in r):
+            return True, f"✅ Email real enviado a {recipient_email}"
+        return True, "Email procesado (verificar dashboard de Resend)"
+        
     except Exception as e:
-        print(f"Error sending email via Resend: {e}")
-        return False
+        error_msg = str(e)
+        # Check for Sandbox restriction
+        if "send testing emails to your own email address" in error_msg:
+            return False, "⚠️ Sandbox: Solo puedes enviar emails a TU PROPIA dirección de registro en Resend."
+        return False, f"❌ Error API: {error_msg}"

@@ -200,9 +200,6 @@ with st.sidebar:
         "¿Cuáles son las 5 zonas con mayor % Lead Penetration esta semana?",
         "Compara el Perfect Order entre zonas Wealthy y Non Wealthy en México",
         "Muestra la evolución de Gross Profit UE en Chapinero últimas 8 semanas",
-        "¿Cuál es el promedio de Lead Penetration por país?",
-        "¿Qué zonas tienen alto Lead Penetration pero bajo Perfect Order?",
-        "¿Cuáles son las zonas que más crecen en órdenes en las últimas 5 semanas y qué podría explicar el crecimiento?",
     ]
     for ex in examples:
         st.markdown(f"- *{ex}*")
@@ -240,15 +237,17 @@ with st.sidebar:
                 if st.button("Enviar Reporte", use_container_width=True):
                     if not email_recipient:
                         st.error("Falta el email")
+                    elif "@" not in email_recipient or "." not in email_recipient.split("@")[-1]:
+                        st.error("Por favor, ingresa un correo electrónico válido.")
                     else:
                         from src.email_utils import send_report_email
                         with st.spinner("Enviando..."):
-                            success = send_report_email(email_recipient, report["html"], report["path"])
+                            success, message = send_report_email(email_recipient, report["html"], report["path"])
                             if success:
-                                st.success("¡Enviado!")
-                                st.toast(f"Reporte enviado a {email_recipient}")
+                                st.success(message)
+                                st.toast(message, icon="📧")
                             else:
-                                st.error("Error SMTP")
+                                st.error(message)
 
     st.divider()
     if st.button("🗑️ Borrar chat"):
