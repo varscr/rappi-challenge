@@ -57,6 +57,7 @@ htmlcov/
 
 # Competitive Intelligence Scraper
 competitive_intelligence/data/raw/*.json
+!competitive_intelligence/data/raw/scrape_results_20260328_182500.json
 competitive_intelligence/data/processed/
 competitive_intelligence/logs/
 competitive_intelligence/reports/screenshots/

@@ -38,6 +38,8 @@ Full documentation: [competitive_intelligence/README.md](competitive_intelligenc
 - Automatic executive HTML report with anomalies, trends, correlations, and growth opportunities
 - Built-in email delivery via Resend API
 
+**Live Demo**: [varscr-rappi-challenge-operations-ai-systemapp-bxpmzi.streamlit.app](https://varscr-rappi-challenge-operations-ai-systemapp-bxpmzi.streamlit.app/)
+
 ```bash
 cd operations_ai_system
 source .venv/bin/activate
