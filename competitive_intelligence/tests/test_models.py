@@ -35,7 +35,7 @@ def test_valid_scraped_store():
     )
     assert store.store_name == "McDonald's Polanco"
     # Total Base Price = 150 (product) + 25 (delivery) + 15 (service) = 190.0
-    assert store.total_base_price == 190.0
+    assert store.total_final_price == 190.0
 
 def test_invalid_store_fees():
     """Test that negative fees raise a validation error."""
@@ -46,5 +46,6 @@ def test_invalid_store_fees():
             address_name="Test",
             lat=0, lon=0,
             delivery_fee=-5.0, # This should fail
-            estimated_time="10 min"
+            estimated_time="10 min",
+            time_minutes=10
         )

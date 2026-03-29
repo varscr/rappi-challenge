@@ -1,0 +1,21 @@
+city,neighborhood,type,lat,lon
+CDMX,Polanco,Premium,19.4335,-99.1909
+CDMX,Condesa,Residential,19.4149,-99.1764
+CDMX,Santa Fe,Corporate,19.3621,-99.2687
+CDMX,Iztapalapa Centro,Peripheral,19.3576,-99.0509
+CDMX,Coyoacán Centro,Residential,19.3054,-99.1693
+CDMX,Colonia Del Valle,Residential,19.3942,-99.167
+Monterrey,San Pedro Garza García,Top Premium,25.6685,-100.3681
+Monterrey,San Jerónimo,Premium,25.6829,-100.3634
+Monterrey,Monterrey Centro,Corporate,25.6723,-100.3389
+Monterrey,Cumbres,Residential,25.7127,-100.3813
+Guadalajara,Puerta de Hierro,Premium,20.5885,-103.4429
+Guadalajara,Colonia Americana,Trendy,20.6773,-103.3594
+Guadalajara,Tlaquepaque Centro,Residential,20.6569,-103.3005
+Guadalajara,Bugambilias,Residential,20.6606,-103.3393
+Puebla,Angelópolis,Premium,19.0172,-98.2524
+Querétaro,Juriquilla,Premium Res,20.7126,-100.4584
+Mérida,Altabrisa,Premium,21.0226,-89.5857
+Tijuana,Zona Río,Premium/Corporate,32.5295,-117.02
+Tijuana,Playas de Tijuana,Residential,32.5209,-117.1198
+León,Cerro Gordo,Premium,21.1603,-101.7159

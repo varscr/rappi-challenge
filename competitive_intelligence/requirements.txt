@@ -18,6 +18,7 @@ matplotlib
 seaborn
 plotly
 folium
+streamlit-folium
 
 # Infrastructure & Tooling
 jupyter
