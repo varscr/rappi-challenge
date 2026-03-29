@@ -94,7 +94,13 @@ if "messages" not in st.session_state:
 
 def _chart_dims(df: pd.DataFrame, exclude: set[str]) -> tuple[str, str | None]:
     """Find the most granular (x-axis) and broadest (color) dimension columns."""
-    dims = [c for c in df.columns if c not in exclude]
+    # Exclude columns that are explicitly in the exclude set or are numeric (likely metrics)
+    dims = [c for c in df.columns if c not in exclude and not pd.api.types.is_numeric_dtype(df[c])]
+    
+    # If no non-numeric columns, fall back to anything not excluded
+    if not dims:
+        dims = [c for c in df.columns if c not in exclude]
+        
     x_col = dims[-1] if dims else df.columns[0]
     color_col = dims[0] if len(dims) > 1 and dims[0] != x_col else None
     return x_col, color_col
@@ -104,12 +110,16 @@ def format_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Apply business formatting to the dataframe for display."""
     formatted = df.copy()
     for col in formatted.columns:
-        # If it looks like a ratio (0-1) and isn't 'Orders', format as percentage
-        if formatted[col].dtype in ['float64', 'float32'] and "Orders" not in col and "growth" not in col:
+        # If it looks like a ratio (0-1) and isn't 'Orders' or 'Growth', format as percentage
+        col_lower = col.lower()
+        is_order = "order" in col_lower or "órden" in col_lower
+        is_growth = "growth" in col_lower or "crecimiento" in col_lower
+        
+        if formatted[col].dtype in ['float64', 'float32'] and not is_order and not is_growth:
             if formatted[col].max() <= 1.1 and formatted[col].min() >= -0.1:
                 formatted[col] = formatted[col].apply(lambda x: f"{x:.1%}" if pd.notna(x) else x)
         # Format growth as %
-        elif "growth" in col.lower():
+        elif "growth" in col.lower() or "crecimiento" in col.lower():
             formatted[col] = formatted[col].apply(lambda x: f"{x:+.1f}%" if pd.notna(x) else x)
     return formatted
 
@@ -143,12 +153,16 @@ def render_bar_chart(result: QueryResult) -> None:
                      color_discrete_sequence=RAPPI_COLORS)
     elif result.query_type == "aggregate":
         x_col = df.columns[0]
-        avg_col = f"{metric} (avg)"
+        avg_col = f"{metric} (promedio)"
         fig = px.bar(df, x=x_col, y=avg_col, title=f"Promedio de {metric} por {x_col}",
                      color_discrete_sequence=RAPPI_COLORS)
     elif result.query_type == "order_growth":
-        x_col, color_col = _chart_dims(df, {"growth_pct", f"Orders ({df.columns[-3]})" if len(df.columns) > 3 else ""})
-        fig = px.bar(df, x=x_col, y="growth_pct", color=color_col, title="Crecimiento de Órdenes (%)",
+        y_col = "% Crecimiento"
+        # Exclude the metric column and the two order columns (usually the 4th and 3rd from last before renaming)
+        # But since they are renamed, we just exclude by name if we know them, or by their new names.
+        exclude = {y_col, df.columns[-2], df.columns[-3]} # The two order columns are typically at these positions
+        x_col, color_col = _chart_dims(df, exclude)
+        fig = px.bar(df, x=x_col, y=y_col, color=color_col, title="Crecimiento de Órdenes (%)",
                      color_discrete_sequence=RAPPI_COLORS)
     else:
         return
