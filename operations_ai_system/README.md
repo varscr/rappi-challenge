@@ -1,12 +1,5 @@
 # Rappi Operations AI System
 
-
-# Videos explaining the challenges
-
-Operations AI System: [text](https://kommodo.ai/recordings/KezRcqOUuXMiE3wAew8P?onlyRecording=1)
-
-Competitive Intelligence: [text](https://kommodo.ai/recordings/X1b6PpeYXIYS3ualRHQf)
-
 Intelligent analysis system for Rappi Operations. Two deliverables:
 
 1. **Data Conversational Bot** — natural language queries (in Spanish) over operational metrics, with interactive charts and follow-up suggestions.

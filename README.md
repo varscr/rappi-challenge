@@ -1,9 +1,16 @@
 # Rappi AI Engineer — Technical Challenge
 
+
 Two independent technical cases solving real Rappi problems: competitive market intelligence and operational AI analysis.
 
 **Author**: Fabio Vargas
 **Position**: AI Engineer
+
+## Videos explaining the challenges
+
+Operations AI System: [text](https://kommodo.ai/recordings/KezRcqOUuXMiE3wAew8P?onlyRecording=1)
+
+Competitive Intelligence: [text](https://kommodo.ai/recordings/X1b6PpeYXIYS3ualRHQf)
 
 ---
 
