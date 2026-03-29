@@ -1,5 +1,12 @@
 # Rappi Operations AI System
 
+
+# Videos explaining the challenges
+
+Operations AI System: [text](https://kommodo.ai/recordings/KezRcqOUuXMiE3wAew8P?onlyRecording=1)
+
+Competitive Intelligence: [text](https://kommodo.ai/recordings/X1b6PpeYXIYS3ualRHQf)
+
 Intelligent analysis system for Rappi Operations. Two deliverables:
 
 1. **Data Conversational Bot** — natural language queries (in Spanish) over operational metrics, with interactive charts and follow-up suggestions.
@@ -221,3 +228,4 @@ Based on OpenAI GPT-4o pricing (~$2.50/1M input, ~$10.00/1M output):
 - **Single LLM provider**: Currently tied to OpenAI GPT-4o. Adding a provider abstraction layer would enable fallback to Claude or open-source models.
 - **No CSV/PDF export**: Query results are displayed in the UI but not exportable as CSV or PDF files.
 - **No authentication layer**: The Streamlit app has no user authentication — suitable for localhost demos, not production multi-tenant deployment.
+
